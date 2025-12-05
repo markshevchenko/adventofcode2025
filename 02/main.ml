@@ -7,59 +7,45 @@ let read_first_line filename =
 let parse s = Scanf.sscanf s "%Ld-%Ld" (fun a b -> (a, b))
 
 let is_invalid1 n =
+  let check divisor = (Int64.div n divisor = Int64.rem n divisor) in
   if n < 0L then false
-  else if n < 100L then (Int64.div n 10L = Int64.rem n 10L)
+  else if n < 100L then check 10L
   else if n < 1000L then false
-  else if n < 10000L then (Int64.div n 100L = Int64.rem n 100L)
+  else if n < 10000L then check 100L
   else if n < 100000L then false
-  else if n < 1000000L then (Int64.div n 1000L = Int64.rem n 1000L)
+  else if n < 1000000L then check 1000L
   else if n < 10000000L then false
-  else if n < 100000000L then (Int64.div n 10000L = Int64.rem n 10000L)
+  else if n < 100000000L then check 10000L
   else if n < 1000000000L then false
-  else if n < 10000000000L then (Int64.div n 100000L = Int64.rem n 100000L)
-  else if n < 100000000000L then false
-  else if n < 1000000000000L then (Int64.div n 1000000L = Int64.rem n 1000000L)
-  else if n < 10000000000000L then false
-  else if n < 100000000000000L then (Int64.div n 10000000L = Int64.rem n 10000000L)
-  else if n < 1000000000000000L then false
-  else if n < 10000000000000000L then (Int64.div n 100000000L = Int64.rem n 100000000L)
-  else if n < 100000000000000000L then false
-  else if n < 1000000000000000000L then (Int64.div n 1000000000L = Int64.rem n 1000000000L)
-  else false
+  else if n < 10000000000L then check 100000L
+  else failwith "too big number"
 
-let exp10 n = Seq.repeat 10L |> Seq.take n |> Seq.fold_left Int64.mul 1L
+let unfolder divisor i =
+  if i = 0L then None
+  else Some (Int64.rem i divisor, Int64.div i divisor)
 
-let split number size =
-  let base = exp10 size in
-  let step i = if i = 0L then None else Some (Int64.rem i base, Int64.div i base) in
-  Seq.unfold step number
-
-let digits_count n = n |> Int64.to_float |> Stdlib.log10 |> Float.to_int |> (+) 1
-
-let are_same (s : 'a Seq.t) : bool =
-  match s () with
-  | Seq.Nil -> true
-  | Seq.Cons (head, tail) -> Seq.for_all (Int64.equal head) tail
-
-let range start finish =
-  Seq.ints start |> Seq.take_while ((>=) finish)
-
-let check n size =
-  let parts = split n size in
-  let result = (are_same parts && Seq.length parts > 1) in
-  if result then Printf.printf "%Ld:" n; Seq.iter (Printf.printf " %Ld") parts; Printf.printf " - %B\n" result;
-  result
 
 let is_invalid2 n =
-  range 1 (digits_count n)
-  |> Seq.map (check n)
-  |> Seq.fold_left (||) false
+  let check divisor =
+    let parts = Seq.unfold (unfolder divisor) n |> List.of_seq in
+    List.length parts >= 2 && List.for_all ((=) (List.hd parts)) (List.tl parts) in
+  if n < 10L then false
+  else if n < 100L then check 10L
+  else if n < 1000L then check 10L
+  else if n < 10000L then check 10L || check 100L
+  else if n < 100000L then check 10L
+  else if n < 1000000L then check 10L || check 100L || check 1000L
+  else if n < 10000000L then check 10L
+  else if n < 100000000L then check 10L || check 100L || check 10000L
+  else if n < 1000000000L then check 10L || check 1000L
+  else if n < 10000000000L then check 10L || check 100L || check 100000L
+  else failwith "too big number"
 
 let range64 start finish =
   Seq.unfold (fun i -> if i <= finish then Some (i, Int64.add i 1L) else None) start
 
 let () =
-  "test.txt"
+  "prod.txt"
   |> read_first_line
   |> String.split_on_char ','
   |> List.map parse
