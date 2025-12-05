@@ -9,7 +9,6 @@ let lines_of_file filename =
   in
   Seq.unfold next_line ()
 
-
 let can_access matrix (row, column) =
   let paper i j =
     let has_piper = i >= 0 && i < Array.length matrix
