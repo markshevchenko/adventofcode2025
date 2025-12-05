@@ -24,11 +24,18 @@ let strategy1 (intervals, ids) =
 
 let folder (count, (lo0, hi0)) (lo1, hi1) =
   if hi0 >= lo1
-  then (count, (lo0, hi1))
+  then (count, (lo0, Int64.max hi0 hi1))
   else (Int64.add count (Int64.add (Int64.sub hi0 lo0) 1L), (lo1, hi1))
 
+let compare (lo0, hi0) (lo1, hi1) =
+  if lo0 < lo1 then -1
+  else if lo0 > lo1 then 1
+  else if hi0 < hi1 then -1
+  else if hi0 > hi1 then 1
+  else 0
+
 let strategy2 (intervals, _) =
-  let sorted_intervals = List.sort (fun (a, _) (b, _) -> Int64.compare a b) intervals in
+  let sorted_intervals = List.sort compare intervals in
   let first = List.hd sorted_intervals in
   let (count, (lo, hi)) = List.fold_left folder (0L, first) (List.tl sorted_intervals) in
   Int64.add count (Int64.add (Int64.sub hi lo) 1L)
