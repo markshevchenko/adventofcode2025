@@ -32,8 +32,46 @@ let solution1 lines =
 
   Array.fold_left Int64.add 0L accumulators
 
+let solution2 lines =
+  let matrix =
+    lines
+    |> Seq.map (fun s -> Array.init (String.length s) (String.get s))
+    |> Array.of_seq in
+  let rec collect_number column row accumulator =
+    if row = Array.length matrix - 1
+    then accumulator
+    else
+      let c = matrix.(row).(column) in
+      if c < '0' || c > '9'
+      then collect_number column (row + 1) accumulator
+      else
+        let digit = Char.code c - Char.code '0'in
+        let next_accumulator = Int64.add (Int64.mul accumulator 10L) (Int64.of_int digit) in
+        collect_number column (row + 1) next_accumulator
+    in
+  let operators = matrix.(Array.length matrix - 1) in
+  let rec get_final_sum column final_sum sources =
+    if column < 0
+    then final_sum
+    else
+      let operator = operators.(column) in
+      let number = collect_number column 0 0L in
+      if operator = ' '
+      then get_final_sum (column - 1) final_sum (number::sources)
+      else if operator = '+'
+      then
+        let sum = List.fold_left Int64.add 0L (number::sources) in
+        get_final_sum (column - 2) (Int64.add final_sum sum) []
+      else if operator = '*'
+      then
+        let prod = List.fold_left Int64.mul 1L (number::sources) in
+        get_final_sum (column - 2) (Int64.add final_sum prod) []
+      else failwith "invalid operator"
+    in
+  get_final_sum (Array.length matrix.(0) - 1) 0L []
+
 let () =
   "prod.txt"
   |> lines_of_file
-  |> solution1
+  |> solution2
   |> Printf.printf "%Ld\n"
